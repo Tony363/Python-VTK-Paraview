@@ -140,12 +140,11 @@ ren1.GetActiveCamera().Elevation(30)
 ren1.ResetCameraClippingRange()
 ren1.ResetCamera()
 
-ren1.Render()
+# ren1.Render()
 
 renWin.SetSize(600, 600)
 renWin.Render()
 
-# iren.Initialize()
 iren.Start()
 
 
