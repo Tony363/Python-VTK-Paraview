@@ -71,7 +71,7 @@ def main():
     volumeProperty.SetInterpolationTypeToLinear()
 
     # The mapper / ray cast function know how to render the data.
-    volumeMapper = vtk.vtkFixedPointVolumeRayCastMapper()
+    volumeMapper = vtk.vtkOpenGLGPUVolumeRayCastMapper()
     volumeMapper.SetInputConnection(reader.GetOutputPort())
 
     # The volume holds the mapper and the property and

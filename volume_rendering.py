@@ -32,12 +32,14 @@ iren.SetRenderWindow(renWin)
 # Set a background color for the renderer and set the size of the
 # render window.
 ren1.SetBackground(51/255, 77/255, 102/255)
-
+# ren1.SetBackground(colors.GetColor3d("Wheat"))
+# ren1.SetBackground(0,0,0)
 
 # data reader
 reader = vtk.vtkXMLImageDataReader()
 reader.SetFileName(filename)
 reader.Update()
+print(reader)
 
 # specify the data array in the file to process
 reader.GetOutput().GetPointData().SetActiveAttribute(daryName, 0)
@@ -117,15 +119,16 @@ for i in range( nRgbPoint ):
 
 # Volume Properties
 propVolume = vtk.vtkVolumeProperty()
-propVolume.ShadeOff()
+propVolume.ShadeOn()
 propVolume.SetColor(funcColor)
 propVolume.SetScalarOpacity(funcOpacityScalar)
 propVolume.SetGradientOpacity(funcOpacityGradient)
 propVolume.SetInterpolationTypeToLinear()
 
 # The mapper / ray cast function know how to render the data.
-volumeMapper = vtk.vtkFixedPointVolumeRayCastMapper()
+volumeMapper = vtk.vtkOpenGLGPUVolumeRayCastMapper()
 volumeMapper.SetInputConnection(reader.GetOutputPort())
+volumeMapper.SetBlendModeToMaximumIntensity()
 
 # The volume holds the mapper and the property and 
 # can be used to position/orient the volume
@@ -134,17 +137,17 @@ volume.SetMapper(volumeMapper)
 volume.SetProperty(propVolume)
 
 ren1.AddVolume(volume)
-ren1.SetBackground(colors.GetColor3d("Wheat"))
 ren1.GetActiveCamera().Azimuth(45)
 ren1.GetActiveCamera().Elevation(30)
 ren1.ResetCameraClippingRange()
 ren1.ResetCamera()
-
 # ren1.Render()
 
 renWin.SetSize(600, 600)
-renWin.Render()
 
+
+iren.Initialize()
+renWin.Render()
 iren.Start()
 
 
