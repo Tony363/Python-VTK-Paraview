@@ -3,6 +3,7 @@ import json
 import numpy as np
 import vtk.util.numpy_support as VN
 from pprint import pprint
+from vtkplotter import colorMap
 
 
 # This template is going to show a slice of the data
@@ -14,7 +15,7 @@ from pprint import pprint
 filename = '/home/tony/Desktop/DV_homework/homework5/pv_insitu_300x300x300_30068.vti.part'
 
 #the name of data array which is used in this example
-daryName = 'tev' #'v02' 'v03' 'prs' 
+daryName = 'v02'#'tev'  'v03' 'prs' 
 
 # for accessing build-in color access
 colors = vtk.vtkNamedColors() 
@@ -41,6 +42,10 @@ reader.SetFileName(filename)
 reader.Update()
 print(reader)
 
+output = reader.GetOutput()
+scalar_range = output.GetScalarRange()
+
+
 # specify the data array in the file to process
 reader.GetOutput().GetPointData().SetActiveAttribute(daryName, 0)
 
@@ -55,20 +60,33 @@ print("Data array min: ", np.amin(dary))
 ########## setup color map ###########
 # Now create a lookup table that consists of the full hue circle
 # (from HSV).
-hueLut = vtk.vtkLookupTable()
-hueLut.SetTableRange(dMin, dMax)
-# hueLut.SetHueRange(0, 1)  #comment these three line to default color map, rainbow
-# hueLut.SetSaturationRange(1, 1)
-# hueLut.SetValueRange(1, 1)
-hueLut.Build()  # effective built
+lut = vtk.vtkLookupTable()
+lut.SetTableRange(dMin, dMax)
+# lut.SetHueRange(0, 1)  #comment these three line to default color map, rainbow
+# lut.SetSaturationRange(1, 1)
+# lut.SetValueRange(1, 1)
+lut.Build()  # effective built
+
+mapper = vtk.vtkDataSetMapper()
+# mapper.SetInputData(output)
+mapper.SetScalarRange(scalar_range)
+mapper.SetLookupTable(lut)
+
+actor = vtk.vtkActor()
+actor.SetMapper(mapper)
+
 
 # An outline provides context around the data.
 outlineData = vtk.vtkOutlineFilter()
 outlineData.SetInputConnection(reader.GetOutputPort())
 outlineData.Update()
 
+
+
 mapOutline = vtk.vtkPolyDataMapper()
 mapOutline.SetInputConnection(outlineData.GetOutputPort())
+mapOutline.SetScalarRange(scalar_range)
+mapOutline.SetLookupTable(lut)
 
 outline = vtk.vtkActor()
 outline.SetMapper(mapOutline)
@@ -79,13 +97,17 @@ funcColor = vtk.vtkColorTransferFunction()
 
 # Define scalar opacity transfer function
 funcOpacityScalar = vtk.vtkPiecewiseFunction()
+funcOpacityScalar.AddPoint(dMin,0.0)
+funcOpacityScalar.AddPoint(0.5,0.1)
+funcOpacityScalar.AddPoint(1.00,1.0)
+
 
 # Define gradient opacity transfer funciton
 funcOpacityGradient = vtk.vtkPiecewiseFunction()
 
-funcOpacityGradient.AddPoint(1,0.0)
-funcOpacityGradient.AddPoint(5,0.1)
-funcOpacityGradient.AddPoint(100,1.0)
+funcOpacityGradient.AddPoint(dMin,0.0)
+funcOpacityGradient.AddPoint(0.5,0.1)
+funcOpacityGradient.AddPoint(1.00,1.0)
 
 # How to save transfer function from Paraview
 # In 'color mapp editor', click the button 'Save to present' (a folder icon with a green arrow)
@@ -121,12 +143,12 @@ for i in range( nRgbPoint ):
 propVolume = vtk.vtkVolumeProperty()
 propVolume.ShadeOn()
 propVolume.SetColor(funcColor)
-propVolume.SetScalarOpacity(funcOpacityScalar)
-propVolume.SetGradientOpacity(funcOpacityGradient)
+# propVolume.SetScalarOpacity(funcOpacityScalar)
+#/propVolume.SetGradientOpacity(funcOpacityGradient)
 propVolume.SetInterpolationTypeToLinear()
 
 # The mapper / ray cast function know how to render the data.
-volumeMapper = vtk.vtkOpenGLGPUVolumeRayCastMapper()
+volumeMapper = vtk.vtkGPUVolumeRayCastMapper()
 volumeMapper.SetInputConnection(reader.GetOutputPort())
 volumeMapper.SetBlendModeToMaximumIntensity()
 
@@ -136,25 +158,28 @@ volume = vtk.vtkVolume()
 volume.SetMapper(volumeMapper)
 volume.SetProperty(propVolume)
 
+ren1.AddActor(outline)
+ren1.AddActor(actor)
+ren1.SetBackground(colors.GetColor3d('bkg'))
 ren1.AddVolume(volume)
 ren1.GetActiveCamera().Azimuth(45)
 ren1.GetActiveCamera().Elevation(30)
 ren1.ResetCameraClippingRange()
 ren1.ResetCamera()
-# ren1.Render()
+
+# create the scalar_bar
+scalar_bar = vtk.vtkScalarBarActor()
+scalar_bar.SetOrientationToHorizontal()
+scalar_bar.SetLookupTable(funcColor)
+
+# create the scalar_bar_widget
+scalar_bar_widget = vtk.vtkScalarBarWidget()
+scalar_bar_widget.SetInteractor(iren)
+scalar_bar_widget.SetScalarBarActor(scalar_bar)
+scalar_bar_widget.On()
 
 renWin.SetSize(600, 600)
-
 
 iren.Initialize()
 renWin.Render()
 iren.Start()
-
-
-#### Volume Rendering
-# vtkVolumeRayCastMapper
-# funcRayCast = vtk.vtkVolumeRayCastCompositeFunction()
-# funcRayCast.SetCompositeMethodToClassifyFirst()
-
-# mapperVolume = vtk.vtkVolumeRayCastMapper()
-# mapperVolume.SetVolumeRayCastFunction(funcRayCast)

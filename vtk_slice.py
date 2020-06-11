@@ -33,8 +33,9 @@ renWin.SetSize(600, 600)
 
 # data reader
 reader = vtk.vtkXMLImageDataReader()
-reader.SetFileName(filename)
+reader.SetFileName(filename)q
 reader.Update()
+print(reader)
 
 # specify the data array in the file to process
 reader.GetOutput().GetPointData().SetActiveAttribute(daryName, 0)

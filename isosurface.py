@@ -5,7 +5,7 @@ import vtk
 
 def main():
     fileName = '/home/tony/Desktop/DV_homework/homework5/pv_insitu_300x300x300_30068.vti.part'
-
+    daryName = 'v02'#'tev'  'v03' 'prs'
     colors = vtk.vtkNamedColors()
 
     # Create the RenderWindow, Renderer and Interactor.
@@ -21,23 +21,26 @@ def main():
 
     # Create the pipeline.
     #
-
-    reader = vtk.vtkMetaImageReader()
+    reader = vtk.vtkXMLImageDataReader()
+    # reader = vtk.vtkStructuredPointsReader()
     reader.SetFileName(fileName)
     reader.Update()
     print(reader)
 
-    locator = vtk.vtkMergePoints()
-    locator.SetDivisions(64, 64, 92)
-    locator.SetNumberOfPointsPerBucket(2)
-    locator.AutomaticOff()
+    reader.GetOutput().GetPointData().SetActiveAttribute(daryName, 0)
 
-    iso = vtk.vtkMarchingCubes()
+    # locator = vtk.vtkMergePoints()
+    # locator.SetDivisions(64, 64, 92)
+    # locator.SetNumberOfPointsPerBucket(2)
+    # locator.AutomaticOff()
+
+    # iso = vtk.vtkMarchingCubes()
+    iso = vtk.vtkContourFilter()
     iso.SetInputConnection(reader.GetOutputPort())
     iso.ComputeGradientsOn()
     iso.ComputeScalarsOff()
-    iso.SetValue(0, 1150)
-    iso.SetLocator(locator)
+    iso.SetValue(0, 0.5)
+    # iso.SetLocator(locator)
 
     isoMapper = vtk.vtkPolyDataMapper()
     isoMapper.SetInputConnection(iso.GetOutputPort())
@@ -61,14 +64,13 @@ def main():
     ren1.AddActor(outlineActor)
     ren1.AddActor(isoActor)
     ren1.SetBackground(colors.GetColor3d("SlateGray"))
-    ren1.GetActiveCamera().SetFocalPoint(0, 0, 0)
-    ren1.GetActiveCamera().SetPosition(0, -1, 0)
-    ren1.GetActiveCamera().SetViewUp(0, 0, -1)
-    ren1.ResetCamera()
-    ren1.GetActiveCamera().Dolly(1.5)
-    ren1.ResetCameraClippingRange()
-
     renWin.SetSize(640, 480)
+    ren1.ResetCamera()
+    # ren1.GetActiveCamera().SetFocalPoint(0, 0, 0)
+    # ren1.GetActiveCamera().SetPosition(0, -1, 0)
+    # ren1.GetActiveCamera().SetViewUp(0, 0, -1)
+    ren1.GetActiveCamera().Dolly(1.5)
+    #ren1.ResetCameraClippingRange()
 
     renWin.Render()
     iren.Start()
